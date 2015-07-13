@@ -1,0 +1,18 @@
+{
+    "contents" : "setwd(\"~/Desktop/gitRepos/kaggle/libMututal/Rscript\")\ntrain = read.csv(\"train.csv\")\ntest = read.csv(\"test.csv\")\ntable(train$Hazard)\n\n\n#\"NormalizedGini\" is the other half of the metric. This function does most of the work, though\nSumModelGini <- function(solution, submission) {\n  df = data.frame(solution = solution, submission = submission)\n  df <- df[order(df$submission, decreasing = TRUE),]\n  df\n  df$random = (1:nrow(df))/nrow(df)\n  df\n  totalPos <- sum(df$solution)\n  df$cumPosFound <- cumsum(df$solution) # this will store the cumulative number of positive examples found (used for computing \"Model Lorentz\")\n  df$Lorentz <- df$cumPosFound / totalPos # this will store the cumulative proportion of positive examples found (\"Model Lorentz\")\n  df$Gini <- df$Lorentz - df$random # will store Lorentz minus random\n  print(df)\n  return(sum(df$Gini))\n}\n\nNormalizedGini <- function(solution, submission) {\n  SumModelGini(solution, submission) / SumModelGini(solution, solution)\n}\n\nlibrary(neuralnet)\ntrain1 = cbind(class.ind(paste0(\"h\",train$Hazard)), train[,-c(1,2)])\nnames(train1)\n# formula <- as.formula(paste(paste(names(train1)[1:50], collapse='+') ,  \n#                  '~', paste(names(train1)[51:82], collapse='+') ))\n# nn <- neuralnet(\n#   formula ,\n#   data=train1, hidden=20, err.fct='ce',\n#   linear.output=FALSE)\nfacIndex = names(train) %in% c('T1_V4','T1_V5','T1_V6','T1_V7','T1_V8','T1_V9','T1_V11','T1_V12','T1_V15',\n                               'T1_V16','T1_V17','T2_V3','T2_V5','T2_V11','T2_V12','T2_V13')\ntable(facIndex)\ntrainDummy = data.frame(lapply(names(train)[facIndex], function(x) class.ind(train[, x])))\ntrain1 = cbind(train[,!facIndex], trainDummy)\nformula <- as.formula(paste0('Hazard ~ ', paste(names(train1)[-c(1:2)], collapse='+') ))\n\nnnFactor = neuralnet(\n  formula ,\n  data=train1[,-c(1)], hidden=10, err.fct='sse',\n  linear.output=FALSE)\nplot(nnFactor)\n#change error.fct to use gini!\n# predFactor = prediction(nnFactor)\npredTrain =  compute(nnFactor, train1[,-c(1:2)])\nsummary(predTrain$net.result)\n\n#tranform Y's from numeric to categorical dummy\nhist(data.frame(predFactor$data)$Hazard, breaks = 75 )\nhist(nnFactor$response, breaks = 75)\ntrain2 = cbind(class.ind(paste0(\"h\",train$Hazard)), train1)\nformula2 <- as.formula(paste(paste(names(train2)[1:50], collapse='+') ,  \n                 '~', paste(names(train2)[51:82], collapse='+') ))\n\n",
+    "created" : 1436722887122.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "840616294",
+    "id" : "A08B8864",
+    "lastKnownWriteTime" : 1436749556,
+    "path" : "~/Desktop/gitRepos/kaggle/libMututal/Rscript/buildModel.R",
+    "project_path" : "buildModel.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "type" : "r_source"
+}
